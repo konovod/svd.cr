@@ -11,10 +11,11 @@
 <% end -%>
 module <%= peripheral.name %>
   VERSION = <%= peripheral.version.inspect %>
-  BASE_ADDRESS = 0x<%= peripheral.base_address.to_s(16) %>_u64
+  BASE_ADDRESS = <%= hex(peripheral.base_address) %>
 
 <% peripheral.registers.each do |register| %>
-  <% int_type = "UInt#{register.properties.size}" %>
+  <% register_int_type = larger_uint(register.properties.size) %>
+  <% int_type = register_int_type.name %>
 
   <% if description = register.description %>
     <% description.each_line do |doc| -%>
@@ -22,11 +23,11 @@ module <%= peripheral.name %>
     <% end -%>
   <% end -%>
   struct <%= register.name %>
-    ADDRESS = BASE_ADDRESS + 0x<%= register.address_offset.to_s(16) %>
+    ADDRESS = BASE_ADDRESS + <%= hex(register.address_offset) %>
 
     @value : <%= int_type %>
 
-    def initialize(@value : <%= int_type%>)
+    def initialize(@value : <%= int_type %>)
     end
 
     def to_i : <%= int_type %>
@@ -34,7 +35,7 @@ module <%= peripheral.name %>
     end
 
     def self.reset_value : self
-      new(0x<%= register.properties.reset_value %>)
+      new(<%= hex(register.properties.reset_value) %>)
     end
 
     def self.pointer : Pointer(<%= int_type %>)
@@ -51,14 +52,15 @@ module <%= peripheral.name %>
 
   <% register.fields.each do |field| %>
     <% field_name = field.name.underscore %>
-    <% int_type = larger_int_type(field.bit_width) %>
-    <% type = int_type %>
-    <% mask = (1_u64 << field.bit_width) - 1 %>
+    <% int_type = larger_uint(field.bit_width) %>
+    <% type = int_type.name %>
+    <% type = "Bool" if field.bit_width == 1 %>
+    <% mask = register_int_type.new(1).rotate_left(field.bit_width) &- 1 %>
     <% mask_shifted = mask << field.bit_offset %>
 
     <% if field.enumerated_values.size > 0 %>
       <% type = field.name %>
-      enum <%= field.name %> : <%= int_type == "Bool" ? "UInt8" : int_type %>
+      enum <%= field.name %> : <%= int_type.name %>
       <% field.enumerated_values.each do |val| %>
         <% name = val.name.camelcase %>
         <% name = "VAL_#{name}" if name[0].number? %>
@@ -68,7 +70,7 @@ module <%= peripheral.name %>
             # <%= doc %>
           <% end -%>
         <% end -%>
-        <%= name %> = 0x<%= val.value.to_s(16) %>
+        <%= name %> = <%= hex(val.value) %>
       <% end %>
       end
     <% end %>
@@ -81,9 +83,9 @@ module <%= peripheral.name %>
       <% end -%>
       def <%= field_name %> : <%= type %>
         <% if type == "Bool" %>
-          @value.bits_set?(0x<%= mask_shifted.to_s(16) %>)
+          @value.bits_set?(<%= hex(mask_shifted) %>)
         <% else %>
-          <%= type %>.new(@value.unsafe_shr(<%= field.bit_offset %>) & 0x<%= mask.to_s(16) %>)
+          <%= type %>.new(@value.unsafe_shr(<%= field.bit_offset %>) & <%= hex(mask) %>)
         <% end %>
       end
 
@@ -104,8 +106,8 @@ module <%= peripheral.name %>
         <% end -%>
       <% end -%>
       def self.<%= field_name %>=(value : <%= type %>) : <%= type %>
-        pointer.value = (pointer.value & 0x<%= (~mask_shifted).to_s(16) %>) |
-                        (value.to_i & 0x<%= mask.to_s(16) %>).unsafe_shl(<%= field.bit_offset %>)
+        pointer.value = (pointer.value & <%= hex(~mask_shifted) %>) |
+                        (value.to_i & <%= hex(mask) %>).unsafe_shl(<%= field.bit_offset %>)
       end
     <% end %>
   <% end %>
@@ -116,19 +118,19 @@ module <%= peripheral.name %>
       <% register.fields.each do |field| -%>
         <% next unless field.access.writable? -%>
         <% field_name = field.name.underscore -%>
-        <%= field_name %> : <%= larger_int_type(field.bit_width) %>? = nil,
+        <%= field_name %> : <%= larger_uint(field.bit_width) %>? = nil,
       <% end %>
     ) : self
       value = @value
       <% register.fields.each do |field| -%>
         <% next unless field.access.writable? %>
         <% field_name = field.name.underscore %>
-        <% mask = (1_u64 << field.bit_width) - 1 %>
+        <% mask = register_int_type.new(1).rotate_left(field.bit_width) &- 1 %>
         <% mask_shifted = mask << field.bit_offset %>
 
         if <%= field_name %>
-          value = (value & 0x<%= (~mask_shifted).to_s(16) %>) |
-                  (<%= field_name %>.to_i & 0x<%= mask.to_s(16) %>).unsafe_shl(<%= field.bit_offset %>)
+          value = (value & <%= hex(~mask_shifted) %>) |
+                  (<%= field_name %>.to_i & <%= hex(mask) %>).unsafe_shl(<%= field.bit_offset %>)
         end
       <% end %>
       new(value)
