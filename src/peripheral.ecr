@@ -128,7 +128,7 @@ module <%= peripheral.name %>
         <% mask = register_int_type.new(1).rotate_left(field.bit_width) &- 1 %>
         <% mask_shifted = mask << field.bit_offset %>
 
-        if <%= field_name %>
+        unless <%= field_name %>.nil?
           value = (value & <%= hex(~mask_shifted) %>) |
                   (<%= field_name %>.to_i & <%= hex(mask) %>).unsafe_shl(<%= field.bit_offset %>)
         end
