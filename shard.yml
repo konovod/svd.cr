@@ -1,0 +1,13 @@
+name: svd
+version: 0.1.0
+
+authors:
+  - Stephanie Wilde-Hobbs <git@stephanie.is>
+
+targets:
+  crystal-svd:
+    main: src/main.cr
+
+crystal: '>= 1.13.0'
+
+license: MIT

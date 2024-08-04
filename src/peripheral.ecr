@@ -1,0 +1,143 @@
+<% if licence_text = device.licence_text %>
+  <% licence_text.each_line do |doc| -%>
+    # <%= doc %>
+  <% end %>
+<% end %>
+
+<% if description = peripheral.description %>
+  <% description.each_line do |doc| -%>
+    # <%= doc %>
+  <% end -%>
+<% end -%>
+module <%= peripheral.name %>
+  VERSION = <%= peripheral.version.inspect %>
+  BASE_ADDRESS = 0x<%= peripheral.base_address.to_s(16) %>_u64
+
+<% peripheral.registers.each do |register| %>
+  <% int_type = "UInt#{register.properties.size}" %>
+
+  <% if description = register.description %>
+    <% description.each_line do |doc| -%>
+      # <%= doc %>
+    <% end -%>
+  <% end -%>
+  struct <%= register.name %>
+    ADDRESS = BASE_ADDRESS + 0x<%= register.address_offset.to_s(16) %>
+
+    @value : <%= int_type %>
+
+    def initialize(@value : <%= int_type%>)
+    end
+
+    def to_i : <%= int_type %>
+      @value
+    end
+
+    def self.reset_value : self
+      new(0x<%= register.properties.reset_value %>)
+    end
+
+    def self.pointer : Pointer(<%= int_type %>)
+      Pointer(<%= int_type %>).new(ADDRESS)
+    end
+
+    def self.value : self
+      new(self.pointer.value)
+    end
+
+    def self.value=(value : self) : self
+      self.pointer.value = value.to_i
+    end
+
+  <% register.fields.each do |field| %>
+    <% field_name = field.name.underscore %>
+    <% int_type = larger_int_type(field.bit_width) %>
+    <% type = int_type %>
+    <% mask = (1_u64 << field.bit_width) - 1 %>
+    <% mask_shifted = mask << field.bit_offset %>
+
+    <% if field.enumerated_values.size > 0 %>
+      <% type = field.name %>
+      enum <%= field.name %> : <%= int_type == "Bool" ? "UInt8" : int_type %>
+      <% field.enumerated_values.each do |val| %>
+        <% name = val.name.camelcase %>
+        <% name = "VAL_#{name}" if name[0].number? %>
+
+        <% if description = val.description %>
+          <% description.each_line do |doc| -%>
+            # <%= doc %>
+          <% end -%>
+        <% end -%>
+        <%= name %> = 0x<%= val.value.to_s(16) %>
+      <% end %>
+      end
+    <% end %>
+
+    <% if field.access.readable? %>
+      <% if description = field.description %>
+        <% description.each_line do |doc| -%>
+          # <%= doc %>
+        <% end -%>
+      <% end -%>
+      def <%= field_name %> : <%= type %>
+        <% if type == "Bool" %>
+          @value.bits_set?(0x<%= mask_shifted.to_s(16) %>)
+        <% else %>
+          <%= type %>.new(@value.unsafe_shr(<%= field.bit_offset %>) & 0x<%= mask.to_s(16) %>)
+        <% end %>
+      end
+
+      <% if description = field.description %>
+        <% description.each_line do |doc| -%>
+          # <%= doc %>
+        <% end -%>
+      <% end -%>
+      def self.<%= field_name %> : <%= type %>
+        value.<%= field_name %>
+      end
+    <% end %>
+
+    <% if field.access.writable? %>
+      <% if description = field.description %>
+        <% description.each_line do |doc| -%>
+          # <%= doc %>
+        <% end -%>
+      <% end -%>
+      def self.<%= field_name %>=(value : <%= type %>) : <%= type %>
+        pointer.value = (pointer.value & 0x<%= (~mask_shifted).to_s(16) %>) |
+                        (value.to_i & 0x<%= mask.to_s(16) %>).unsafe_shl(<%= field.bit_offset %>)
+      end
+    <% end %>
+  <% end %>
+
+  <% if register.fields.count(&.access.writable?) > 0 %>
+    def copy_with(
+      *,
+      <% register.fields.each do |field| -%>
+        <% next unless field.access.writable? -%>
+        <% field_name = field.name.underscore -%>
+        <%= field_name %> : <%= larger_int_type(field.bit_width) %>? = nil,
+      <% end %>
+    ) : self
+      value = @value
+      <% register.fields.each do |field| -%>
+        <% next unless field.access.writable? %>
+        <% field_name = field.name.underscore %>
+        <% mask = (1_u64 << field.bit_width) - 1 %>
+        <% mask_shifted = mask << field.bit_offset %>
+
+        if <%= field_name %>
+          value = (value & 0x<%= (~mask_shifted).to_s(16) %>) |
+                  (<%= field_name %>.to_i & 0x<%= mask.to_s(16) %>).unsafe_shl(<%= field.bit_offset %>)
+        end
+      <% end %>
+      new(value)
+    end
+
+    def self.set(**kwargs) : Nil
+      self.value = self.value.copy_with(**kwargs)
+    end
+  <% end %>
+  end
+<% end %>
+end
