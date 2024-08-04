@@ -43,11 +43,12 @@ module <%= peripheral.name %>
     end
 
     def self.value : self
-      new(self.pointer.value)
+      value = Atomic::Ops.load(self.pointer, :not_atomic, volatile: true)
+      new(value)
     end
 
     def self.value=(value : self) : self
-      self.pointer.value = value.to_i
+      Atomic::Ops.store(self.pointer, value.to_i, :not_atomic, volatile: true)
       value
     end
 
