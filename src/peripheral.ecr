@@ -53,13 +53,11 @@ module <%= peripheral.name %>
   <% register.fields.each do |field| %>
     <% field_name = field.name.underscore %>
     <% int_type = larger_uint(field.bit_width) %>
-    <% type = int_type.name %>
-    <% type = "Bool" if field.bit_width == 1 %>
+    <% type = type(field) %>
     <% mask = register_int_type.new(1).rotate_left(field.bit_width) &- 1 %>
     <% mask_shifted = mask << field.bit_offset %>
 
     <% if field.enumerated_values.size > 0 %>
-      <% type = field.name %>
       enum <%= field.name %> : <%= int_type.name %>
       <% field.enumerated_values.each do |val| %>
         <% name = val.name.camelcase %>
@@ -118,7 +116,7 @@ module <%= peripheral.name %>
       <% register.fields.each do |field| -%>
         <% next unless field.access.writable? -%>
         <% field_name = field.name.underscore -%>
-        <%= field_name %> : <%= larger_uint(field.bit_width) %>? = nil,
+        <%= field_name %> : <%= type(field) %>? = nil,
       <% end %>
     ) : self
       value = @value

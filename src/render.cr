@@ -19,6 +19,14 @@ module SVD
     end
   end
 
+  protected def self.type(field : SVD::Field)
+    int_type = larger_uint(field.bit_width)
+    name = int_type.name
+    name = "Bool" if field.bit_width == 1
+    name = field.name if field.enumerated_values.size > 0
+    name
+  end
+
   protected def self.hex(int : Int) : String
     suffix = case int
              when UInt8   then "_u8"
