@@ -48,6 +48,7 @@ module <%= peripheral.name %>
 
     def self.value=(value : self) : self
       self.pointer.value = value.to_i
+      value
     end
 
   <% register.fields.each do |field| %>
@@ -106,6 +107,7 @@ module <%= peripheral.name %>
       def self.<%= field_name %>=(value : <%= type %>) : <%= type %>
         pointer.value = (pointer.value & <%= hex(~mask_shifted) %>) |
                         (value.to_i & <%= hex(mask) %>).unsafe_shl(<%= field.bit_offset %>)
+        value
       end
     <% end %>
   <% end %>
