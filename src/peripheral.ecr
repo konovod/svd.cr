@@ -131,7 +131,7 @@ module <%= peripheral.name %>
                   (<%= field_name %>.to_i & <%= hex(mask) %>).unsafe_shl(<%= field.bit_offset %>)
         end
       <% end %>
-      new(value)
+      self.class.new(value)
     end
 
     def self.set(**kwargs) : Nil
