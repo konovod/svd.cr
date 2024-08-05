@@ -85,7 +85,7 @@ module <%= peripheral.name %>
         <% if type == "Bool" %>
           @value.bits_set?(<%= hex(mask_shifted) %>)
         <% else %>
-          <%= type %>.new(@value.unsafe_shr(<%= field.bit_offset %>) & <%= hex(mask) %>)
+          <%= type %>.new!(@value.unsafe_shr(<%= field.bit_offset %>) & <%= hex(mask) %>)
         <% end %>
       end
 
