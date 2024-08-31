@@ -43,12 +43,12 @@ module <%= peripheral.name %>
     end
 
     def self.value : self
-      value = Atomic::Ops.load(self.pointer, :not_atomic, volatile: true)
+      value = self.pointer.load(volatile: true)
       new(value)
     end
 
     def self.value=(value : self) : self
-      Atomic::Ops.store(self.pointer, value.to_i, :not_atomic, volatile: true)
+      self.pointer.store(value.to_i, volatile: true)
       value
     end
 
@@ -85,7 +85,7 @@ module <%= peripheral.name %>
         <% if type == "Bool" %>
           @value.bits_set?(<%= hex(mask_shifted) %>)
         <% else %>
-          <%= type %>.new!(@value.unsafe_shr(<%= field.bit_offset %>) & <%= hex(mask) %>)
+          <%= type %>.new!((@value >> <%= field.bit_offset %>) & <%= hex(mask) %>)
         <% end %>
       end
 
@@ -106,8 +106,7 @@ module <%= peripheral.name %>
         <% end -%>
       <% end -%>
       def self.<%= field_name %>=(value : <%= type %>) : <%= type %>
-        pointer.value = (pointer.value & <%= hex(~mask_shifted) %>) |
-                        (value.to_i & <%= hex(mask) %>).unsafe_shl(<%= field.bit_offset %>)
+        self.set(<%= field_name %>: value)
         value
       end
     <% end %>
@@ -131,7 +130,7 @@ module <%= peripheral.name %>
 
         unless <%= field_name %>.nil?
           value = (value & <%= hex(~mask_shifted) %>) |
-                  (<%= field_name %>.to_i & <%= hex(mask) %>).unsafe_shl(<%= field.bit_offset %>)
+                  <%= register_int_type %>.new!(<%= field_name %>.to_int).&(<%= hex(mask) %>) << <%= field.bit_offset %>
         end
       <% end %>
       self.class.new(value)
