@@ -30,7 +30,7 @@ module <%= peripheral.name %>
     def initialize(@value : <%= int_type %>)
     end
 
-    def to_i : <%= int_type %>
+    def to_int : <%= int_type %>
       @value
     end
 
@@ -48,7 +48,7 @@ module <%= peripheral.name %>
     end
 
     def self.value=(value : self) : self
-      self.pointer.store(value.to_i, volatile: true)
+      self.pointer.store(value.to_int, volatile: true)
       value
     end
 
