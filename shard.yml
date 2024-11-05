@@ -8,6 +8,12 @@ targets:
   crystal-svd:
     main: src/main.cr
 
+scripts:
+  postinstall: shards build
+
+executables:
+  - crystal-svd
+
 crystal: '>= 1.13.0'
 
 license: MIT
