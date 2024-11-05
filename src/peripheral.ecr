@@ -136,8 +136,21 @@ module <%= peripheral.name %>
       self.class.new(value)
     end
 
-    def self.set(**kwargs) : Nil
-      self.value = self.value.copy_with(**kwargs)
+    def self.set(
+      *,
+      <% register.fields.each do |field| -%>
+        <% next unless field.access.writable? -%>
+        <% field_name = field.name.underscore -%>
+        <%= field_name %> : <%= type(field) %>? = nil,
+      <% end %>
+    ) : Nil
+      self.value = self.value.copy_with(
+        <% register.fields.each do |field| -%>
+          <% next unless field.access.writable? -%>
+          <% field_name = field.name.underscore -%>
+          <%= field_name %>: <%= field_name %>,
+        <% end %>
+      )
     end
   <% end %>
   end
