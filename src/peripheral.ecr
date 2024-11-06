@@ -72,6 +72,10 @@ module <%= peripheral.name %>
         <% end -%>
         <%= name %> = <%= hex(val.value) %>
       <% end %>
+
+        def self.reset_value : <%= field.name %>
+          <%= register.name %>.reset_value.<%= field_name %>
+        end
       end
     <% end %>
 
