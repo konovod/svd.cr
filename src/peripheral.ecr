@@ -62,7 +62,7 @@ module <%= peripheral.name %>
     <% if field.enumerated_values.size > 0 %>
       enum <%= field.name %> : <%= int_type.name %>
       <% field.enumerated_values.each do |val| %>
-        <% name = val.name.camelcase %>
+        <% name = val.name.upcase %>
         <% name = "VAL_#{name}" if name[0].number? %>
 
         <% if description = val.description %>
