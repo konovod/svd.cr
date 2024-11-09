@@ -97,6 +97,8 @@ module SVD
       msb, _, lsb = bit_range[1..-2].partition(':')
       bit_offset = lsb.to_i
       bit_width = msb.to_i - bit_offset + 1
+    elsif bit_offset = scaled_uint(node.child?("bitOffset")).try(&.to_i)
+      bit_width = scaled_uint(node.child("bitWidth")).try(&.to_i)
     else
       raise "No bit offset/width for #{node.child("name").content}"
     end
