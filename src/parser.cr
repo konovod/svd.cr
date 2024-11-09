@@ -79,6 +79,7 @@ module SVD
       properties: partial_rp.to_register_properties,
       access: partial_rp.access,
       fields: fields,
+      dim: parse_dim(node)
     )
   end
 
@@ -146,6 +147,20 @@ module SVD
       protection: protection || parent.protection,
       reset_value: reset_value || parent.reset_value,
       reset_mask: reset_mask || parent.reset_mask,
+    )
+  end
+
+  protected def self.parse_dim(node : XML::Node) : Dim?
+    size = scaled_uint(node.child?("dim"))
+    return unless size
+
+    address_increment = scaled_uint(node.child("dimIncrement"))
+    impl_name = node.child?("dimName").try(&.content)
+
+    SVD::Dim.new(
+      size: size.to_i,
+      address_increment: address_increment,
+      impl_name: impl_name
     )
   end
 

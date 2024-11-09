@@ -16,14 +16,21 @@ module <%= peripheral.name %>
 <% peripheral.registers.each do |register| %>
   <% register_int_type = larger_uint(register.properties.size) %>
   <% int_type = register_int_type.name %>
+  <% impl_name = register.dim.try(&.impl_name(register.name)) || register.name %>
 
   <% if description = register.description %>
     <% description.each_line do |doc| -%>
       # <%= doc %>
     <% end -%>
   <% end -%>
-  struct <%= register.name %>
-    ADDRESS = BASE_ADDRESS + <%= hex(register.address_offset) %>
+  <%= register.dim ? "abstract" : "" %> struct <%= impl_name %>
+    <% unless register.dim %>
+      ADDRESS = BASE_ADDRESS + <%= hex(register.address_offset) %>
+
+      protected def self.address : UInt64
+        ADDRESS
+      end
+    <% end %>
 
     @value : <%= int_type %>
 
@@ -39,7 +46,7 @@ module <%= peripheral.name %>
     end
 
     def self.pointer : Pointer(<%= int_type %>)
-      Pointer(<%= int_type %>).new(ADDRESS)
+      Pointer(<%= int_type %>).new(self.address)
     end
 
     def self.value : self
@@ -74,7 +81,7 @@ module <%= peripheral.name %>
       <% end %>
 
         def self.reset_value : <%= field.name %>
-          <%= register.name %>.reset_value.<%= field_name %>
+          <%= impl_name %>.reset_value.<%= field_name %>
         end
       end
     <% end %>
@@ -157,6 +164,18 @@ module <%= peripheral.name %>
       )
     end
   <% end %>
-  end
+  end # struct
+
+  <% if dim = register.dim %>
+    <% dim.size.times do |dim_index| %>
+      struct <%= dim.instance_name(register.name, dim_index) %> < <%= impl_name %>
+        ADDRESS = BASE_ADDRESS + <%= hex(dim.instance_addr(register.address_offset, dim_index)) %>
+
+        protected def self.address : UInt64
+          ADDRESS
+        end
+      end
+    <% end %>
+  <% end %>
 <% end %>
 end
