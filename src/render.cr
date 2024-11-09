@@ -6,6 +6,14 @@ module SVD
   def self.render_peripheral(peripheral : SVD::Peripheral, device : SVD::Device, io : IO)
     source = ECR.render("#{__DIR__}/peripheral.ecr")
     io << Crystal.format(source)
+  rescue ex : Crystal::SyntaxException
+    STDERR.puts "syntax error in #{peripheral.name} '#{ex.line_number}:#{ex.column_number}': #{ex.message}"
+
+    filename = "/tmp/error.cr"
+    File.write(filename, source)
+    STDERR.puts "Whole File: #{filename}"
+
+    exit(1)
   end
 
   protected def self.larger_uint(width : Int) : Int.class
