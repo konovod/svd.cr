@@ -15,7 +15,7 @@ module SVD
       raise "Invalid index" unless 0 <= index < size
 
       if name.ends_with? "[%s]"
-        name[0...-4] + "_#{index}"
+        name[0...-4] + "#{index}"
       else
         raise "Unsupported dim array usage"
       end
