@@ -1,19 +1,4 @@
-<% if licence_text = device.licence_text %>
-  <% licence_text.each_line do |doc| -%>
-    # <%= doc %>
-  <% end %>
-<% end %>
-
-<% if description = peripheral.description %>
-  <% description.each_line do |doc| -%>
-    # <%= doc %>
-  <% end -%>
-<% end -%>
-module <%= peripheral.name %>
-  VERSION = <%= peripheral.version.inspect %>
-  BASE_ADDRESS = <%= hex(peripheral.base_address) %>
-
-<% peripheral.registers.each do |register| %>
+<% registers.each do |register| %>
   <% register_int_type = larger_uint(register.properties.size) %>
   <% int_type = register_int_type.name %>
   <% impl_name = register.dim.try(&.impl_name(register.name)) || register.name %>
@@ -69,7 +54,7 @@ module <%= peripheral.name %>
     <% if field.enumerated_values.size > 0 %>
       enum <%= field.name %> : <%= int_type.name %>
       <% field.enumerated_values.each do |val| %>
-        <% name = val.name.upcase %>
+        <% name = val.name.lstrip("_").upcase %>
         <% name = "VAL_#{name}" if name[0].number? %>
 
         <% if description = val.description %>
@@ -178,4 +163,3 @@ module <%= peripheral.name %>
     <% end %>
   <% end %>
 <% end %>
-end

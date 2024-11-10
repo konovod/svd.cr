@@ -1,6 +1,6 @@
 require "./model/*"
 require "./parser"
-require "./render"
+require "./render/*"
 
 module SVD
   VERSION = "0.1.0"

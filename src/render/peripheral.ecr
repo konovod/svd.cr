@@ -1,0 +1,45 @@
+<% if licence_text = device.licence_text %>
+  <% licence_text.each_line do |doc| -%>
+    # <%= doc %>
+  <% end %>
+<% end %>
+
+<% if description = peripheral.description %>
+  <% description.each_line do |doc| -%>
+    # <%= doc %>
+  <% end -%>
+<% end -%>
+module <%= peripheral.name %>
+  VERSION = <%= peripheral.version.inspect %>
+  BASE_ADDRESS = <%= hex(peripheral.base_address) %>
+
+  <%= render_register_group(peripheral.registers) %>
+
+  <% peripheral.clusters.each do |cluster| %>
+    <% if dim = cluster.dim %>
+      <% dim.size.times do |dim_index| %>
+        <% if description = cluster.description %>
+          <% description.each_line do |doc| -%>
+            # <%= doc %>
+          <% end -%>
+        <% end -%>
+        module <%= dim.instance_name(cluster.name, dim_index) %>
+          BASE_ADDRESS = <%= peripheral.name %>::BASE_ADDRESS + <%= hex(dim.instance_addr(cluster.address_offset, dim_index)) %>
+
+          <%= render_register_group(cluster.registers) %>
+        end
+      <% end %>
+    <% else %>
+      <% if description = cluster.description %>
+        <% description.each_line do |doc| -%>
+          # <%= doc %>
+        <% end -%>
+      <% end -%>
+      module <%= cluster.name %>
+        BASE_ADDRESS = <%= peripheral.name %>::BASE_ADDRESS + <%= hex(cluster.address_offset) %>
+
+        <%= render_register_group(cluster.registers) %>
+      end
+    <% end %>
+  <% end %>
+end

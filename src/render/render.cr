@@ -1,6 +1,6 @@
 require "ecr"
 require "compiler/crystal/tools/formatter"
-require "./model/*"
+require "../model/*"
 
 module SVD
   def self.render_peripheral(peripheral : SVD::Peripheral, device : SVD::Device, io : IO)
@@ -14,6 +14,10 @@ module SVD
     STDERR.puts "Whole File: #{filename}"
 
     exit(1)
+  end
+
+  def self.render_register_group(registers : Array(SVD::Register)) : String
+    ECR.render("#{__DIR__}/register_group.ecr")
   end
 
   protected def self.larger_uint(width : Int) : Int.class

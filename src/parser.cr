@@ -44,8 +44,13 @@ module SVD
       registers = reg_node.children("register").map do |node|
         parse_register(node, partial_rp)
       end
+
+      clusters = reg_node.children("cluster").map do |node|
+        parse_cluster(node, partial_rp)
+      end
     else
       registers = Array(SVD::Register).new
+      clusters = Array(SVD::Cluster).new
     end
 
     SVD::Peripheral.new(
@@ -55,6 +60,27 @@ module SVD
       base_address: scaled_uint(node.child("baseAddress")),
       register_properties: partial_rp,
       registers: registers,
+      clusters: clusters,
+    )
+  end
+
+  protected def self.parse_cluster(
+    node : XML::Node,
+    parent_rp : RegisterProperties::Partial,
+  )
+    partial_rp = parse_register_properties(node, parent_rp)
+
+    registers = node.children("register").map do |node|
+      parse_register(node, partial_rp)
+    end
+
+    SVD::Cluster.new(
+      name: node.child("name").content,
+      description: format_doc(node.child?("description")),
+      address_offset: scaled_uint(node.child("addressOffset")),
+      register_properties: partial_rp,
+      registers: registers,
+      dim: parse_dim(node),
     )
   end
 
