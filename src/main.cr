@@ -1,6 +1,9 @@
 require "./svd"
 
 device = SVD.parse(File.read(ARGV[0]))
+
+device = SVD::Transform::RedundantNaming.transform(device)
+
 device.peripherals.each do |peripheral|
   outfile = "#{File.dirname(ARGV[0])}/#{peripheral.name.underscore}.cr"
   File.open(outfile, "w") do |file|
