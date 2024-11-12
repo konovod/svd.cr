@@ -15,7 +15,14 @@ module SVD
       raise "Invalid index" unless 0 <= index < size
 
       if name.ends_with? "[%s]"
-        name[0...-4] + "#{index}"
+        name = name[0...-4]
+
+        # Confusing to append another number if the name already ends with a number
+        if name[-1].number?
+          name += '_'
+        end
+
+        name += index.to_s
       else
         raise "Unsupported dim array usage"
       end
