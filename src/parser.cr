@@ -142,7 +142,7 @@ module SVD
       description: format_doc(node.child?("description")),
       bit_offset: bit_offset,
       bit_width: bit_width,
-      access: partial_rp.access.not_nil!,
+      access: partial_rp.access || SVD::RegisterProperties::Access::ReadOnly,
       enumerated_values: enumerated_values,
     )
   end
@@ -217,7 +217,7 @@ module SVD
     if num.starts_with? '#'
       num = num.lstrip('#').to_u64(base: 2)
     else
-      num = num.to_u64(base: 10, prefix: true) # prefix: true handles 0x
+      num = num.downcase.to_u64(base: 10, prefix: true) # prefix: true handles 0x
     end
 
     num * unit

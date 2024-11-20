@@ -2,6 +2,10 @@
   <% register_int_type = larger_uint(register.properties.size) %>
   <% int_type = register_int_type.name %>
   <% impl_name = register.dim.try(&.impl_name(register.name)) || register.name %>
+  <% if impl_name=~/^[0-9].*/ %>
+    <% impl_name = "N"+impl_name %>
+  <% end %>
+  
 
   <% if description = register.description %>
     <% description.each_line do |doc| -%>
@@ -46,13 +50,25 @@
 
   <% register.fields.each do |field| %>
     <% field_name = field.name.underscore %>
+    <% if field_name=~/^[0-9].*/ %>
+    <% field_name = "_"+field_name %>
+    <% end %>
+    <% field_name_upcase = field.name %>
     <% int_type = larger_uint(field.bit_width) %>
     <% type = type(field) %>
+    <% if field_name_upcase=~/^[0-9a-z].*/  %>
+    <% field_name_upcase = "N"+field_name_upcase %>
+      <% if field.enumerated_values.size > 0 %>
+      <% type = field_name_upcase %>
+      <% end %>
+    <% end %>
+    
     <% mask = register_int_type.new(1).rotate_left(field.bit_width) &- 1 %>
     <% mask_shifted = mask << field.bit_offset %>
 
     <% if field.enumerated_values.size > 0 %>
-      enum <%= field.name %> : <%= int_type.name %>
+    
+      enum <%= field_name_upcase %> : <%= int_type.name %>
       <% field.enumerated_values.each do |val| %>
         <% name = val.name.lstrip("_").upcase %>
         <% name = "VAL_#{name}" if name[0].number? %>
@@ -65,7 +81,7 @@
         <%= name %> = <%= hex(val.value) %>
       <% end %>
 
-        def self.reset_value : <%= field.name %>
+        def self.reset_value : <%= field_name_upcase %>
           <%= impl_name %>.reset_value.<%= field_name %>
         end
       end
@@ -114,16 +130,28 @@
       <% register.fields.each do |field| -%>
         <% next unless field.access.writable? -%>
         <% field_name = field.name.underscore -%>
-        <%= field_name %> : <%= type(field) %>? = nil,
+        <% if field_name=~/^[0-9].*/ -%>
+        <% field_name = "_"+field_name -%>
+        <% end -%>
+        <% atype = type(field) -%>
+        <% if atype.to_s=~/^[0-9].*/ -%>
+        <% atype = "N"+atype -%>
+        <% end -%>
+        
+        
+        
+        <%= field_name %> : <%= atype %>? = nil,
       <% end %>
     ) : self
       value = @value
       <% register.fields.each do |field| -%>
         <% next unless field.access.writable? %>
         <% field_name = field.name.underscore %>
-        <% mask = register_int_type.new(1).rotate_left(field.bit_width) &- 1 %>
-        <% mask_shifted = mask << field.bit_offset %>
-
+        <% if field_name=~/^[0-9].*/ -%>
+        <% field_name = "_"+field_name -%>
+        <% end -%>
+        <% mask = register_int_type.new(1).rotate_left(field.bit_width) &- 1 -%>
+        <% mask_shifted = mask << field.bit_offset -%>
         unless <%= field_name %>.nil?
           value = (value & <%= hex(~mask_shifted) %>) |
                   <%= register_int_type %>.new!(<%= field_name %>.to_int).&(<%= hex(mask) %>) << <%= field.bit_offset %>
@@ -137,13 +165,23 @@
       <% register.fields.each do |field| -%>
         <% next unless field.access.writable? -%>
         <% field_name = field.name.underscore -%>
-        <%= field_name %> : <%= type(field) %>? = nil,
+        <% if field_name=~/^[0-9].*/ -%>
+        <% field_name = "_"+field_name -%>
+        <% end -%>
+        <% atype = type(field) -%>
+        <% if atype.to_s=~/^[0-9].*/ -%>
+        <% atype = "N"+atype -%>
+        <% end -%>
+        <%= field_name %> : <%= atype %>? = nil,
       <% end %>
     ) : Nil
       self.value = self.value.copy_with(
         <% register.fields.each do |field| -%>
           <% next unless field.access.writable? -%>
           <% field_name = field.name.underscore -%>
+          <% if field_name=~/^[0-9].*/ -%>
+          <% field_name = "_"+field_name -%>
+          <% end -%>
           <%= field_name %>: <%= field_name %>,
         <% end %>
       )
@@ -153,7 +191,8 @@
 
   <% if dim = register.dim %>
     <% dim.size.times do |dim_index| %>
-      struct <%= dim.instance_name(register.name, dim_index) %> < <%= impl_name %>
+    # dim.instance_name(register.name, dim_index)
+      struct <%= impl_name %><%= dim_index %> < <%= impl_name %>
         ADDRESS = BASE_ADDRESS + <%= hex(dim.instance_addr(register.address_offset, dim_index)) %>
 
         protected def self.address : UInt64

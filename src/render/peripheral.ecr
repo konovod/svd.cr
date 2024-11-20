@@ -23,7 +23,7 @@ module <%= peripheral.name %>
             # <%= doc %>
           <% end -%>
         <% end -%>
-        module <%= dim.instance_name(cluster.name, dim_index) %>
+        module <%= cluster.name.gsub("%s", dim_index) %>
           BASE_ADDRESS = <%= peripheral.name %>::BASE_ADDRESS + <%= hex(dim.instance_addr(cluster.address_offset, dim_index)) %>
 
           <%= render_register_group(cluster.registers) %>
