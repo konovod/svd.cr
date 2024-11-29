@@ -9,7 +9,7 @@ module SVD
   rescue ex : Crystal::SyntaxException
     STDERR.puts "syntax error in #{peripheral.name} '#{ex.line_number}:#{ex.column_number}': #{ex.message}"
 
-    filename = "/tmp/error.cr"
+    filename = File.join(Dir.tempdir, "error.cr")
     File.write(filename, source)
     STDERR.puts "Whole File: #{filename}"
 
